@@ -1,15 +1,22 @@
 import API from './api';
 
 const matchingService = {
-  runMatching: (studentId) => API.post('/match/run', { studentId }),
-  getStudentRecommendations: (studentId, page = 1, limit = 10) => 
-    API.get(`/match/student/${studentId}?page=${page}&limit=${limit}`),
-  getAlumniMatches: (alumniId, page = 1, limit = 10) => 
-    API.get(`/match/alumni/${alumniId}?page=${page}&limit=${limit}`),
-  getMatchDetails: (studentId, alumniId) => 
-    API.get(`/match/${studentId}/${alumniId}`),
-  searchMatches: (studentId, filters) => 
-    API.post('/match/search', { studentId, filters }),
+  // Get student recommendations using YOUR actual backend route
+  // Backend uses: GET /api/match/student/:userId
+  getStudentRecommendations: (userId, page = 1, limit = 10) => 
+    API.get(`/match/student/${userId}?page=${page}&limit=${limit}`),
+  
+  // Get alumni matches
+  getAlumniMatches: (userId, page = 1, limit = 10) => 
+    API.get(`/match/alumni/${userId}?page=${page}&limit=${limit}`),
+  
+  // Get detailed match information
+  getMatchDetails: (userId, matchId) => 
+    API.get(`/match/${userId}/${matchId}`),
+  
+  // Get match score breakdown
+  getMatchScore: (userId1, userId2) => 
+    API.get(`/match/score/${userId1}/${userId2}`),
 };
 
 export default matchingService;

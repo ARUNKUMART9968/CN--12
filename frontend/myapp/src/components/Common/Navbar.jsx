@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiMenu, FiX, FiLogOut, FiUser } from 'react-icons/fi';
 import { logout } from '../../store/authSlice';
@@ -40,33 +40,33 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <div className="flex items-center">
+          <Link to="/" className="flex items-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Career Nexus
             </h1>
-          </div>
+          </Link>
 
-          <div className="hidden md:flex items-center space-y-1">
+          <div className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
           <div className="flex items-center space-x-4">
             <div className="hidden sm:flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-700">{user?.name}</span>
-              <button
-                onClick={() => navigate(user?.role === 'student' ? '/student/profile' : '/alumni/profile')}
+              <Link
+                to={user?.role === 'student' ? '/student/profile' : '/alumni/profile'}
                 className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
               >
                 <FiUser size={20} />
-              </button>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="p-2 text-gray-700 hover:bg-red-100 hover:text-red-600 rounded-lg transition"
@@ -92,25 +92,23 @@ const Navbar = () => {
             className="md:hidden pb-4 border-t border-gray-200"
           >
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
             <div className="border-t border-gray-200 mt-2 pt-2 space-y-2">
-              <button
-                onClick={() => {
-                  navigate(user?.role === 'student' ? '/student/profile' : '/alumni/profile');
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600"
+              <Link
+                to={user?.role === 'student' ? '/student/profile' : '/alumni/profile'}
+                className="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 My Profile
-              </button>
+              </Link>
               <button
                 onClick={() => {
                   handleLogout();

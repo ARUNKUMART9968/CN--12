@@ -12,5 +12,4 @@ const profileService = {
   getProfile: (role, userId) => API.get(`/profile/${role}/${userId}`),
 };
 
-export default profileService;import API from './api';
-
+export default profileService;

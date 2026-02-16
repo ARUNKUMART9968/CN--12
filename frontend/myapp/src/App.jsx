@@ -7,6 +7,11 @@ import { Toaster } from 'react-hot-toast';
 import { Login, Register, ProtectedRoute } from './components/Auth';
 import { StudentDashboard, AlumniDashboard } from './components/Dashboard';
 import { Navbar, Footer } from './components/Common';
+import { StudentProfile, AlumniProfile, ProfileSetup, EditProfile } from './components/Profile';
+import { JobsList, JobDetails, CreateJob, JobApplicants } from './components/Jobs';
+import { Matches, MatchDetails } from './components/Matching';
+import { Connections, PendingRequests } from './components/Connections';
+import { ChatList, ChatWindow } from './components/Chat';
 import { Home, NotFound, Unauthorized } from './pages';
 
 // Services
@@ -40,12 +45,102 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
+            {/* Profile Setup Route */}
+            <Route
+              path="/profile/create"
+              element={
+                <ProtectedRoute>
+                  <ProfileSetup />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Student Routes */}
             <Route
               path="/student/dashboard"
               element={
                 <ProtectedRoute requiredRole="student">
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/profile"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/profile/edit"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <EditProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/matches"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <Matches />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/match/:id"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <MatchDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/connections"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <Connections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/connections/pending"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <PendingRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/messages"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <ChatList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/chat/:chatId"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <ChatWindow />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/jobs"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <JobsList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs/:jobId"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <JobDetails />
                 </ProtectedRoute>
               }
             />
@@ -56,6 +151,62 @@ const App = () => {
               element={
                 <ProtectedRoute requiredRole="alumni">
                   <AlumniDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/profile"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <AlumniProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/profile/edit"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <EditProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/connections"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <Connections />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/messages"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <ChatList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/chat/:chatId"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <ChatWindow />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/create-job"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/alumni/jobs/:jobId/applicants"
+              element={
+                <ProtectedRoute requiredRole="alumni">
+                  <JobApplicants />
                 </ProtectedRoute>
               }
             />

@@ -5,13 +5,14 @@ import { Card, Button, Input } from '../Common';
 import profileService from '../../services/profile';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { FiX } from 'react-icons/fi';
 
 const ProfileSetup = () => {
   const { user } = useSelector(state => state.auth);
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
+
   const isStudent = user?.role === 'student';
 
   const [formData, setFormData] = useState(
@@ -38,7 +39,8 @@ const ProfileSetup = () => {
     }
   );
 
-  const [currentInput, setCurrentInput] = useState('');
+  const [skillInput, setSkillInput] = useState('');
+  const [interestInput, setInterestInput] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,24 +50,55 @@ const ProfileSetup = () => {
     }));
   };
 
-  const addTag = (field) => {
-    if (currentInput.trim()) {
+  const addSkill = () => {
+    if (skillInput.trim() && !formData.skills.includes(skillInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        [field]: [...(prev[field] || []), currentInput.trim()]
+        skills: [...prev.skills, skillInput.trim()]
       }));
-      setCurrentInput('');
+      setSkillInput('');
     }
   };
 
-  const removeTag = (field, index) => {
+  const removeSkill = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addInterest = () => {
+    const field = isStudent ? 'interests' : 'mentoringAreas';
+    if (interestInput.trim() && !formData[field].includes(interestInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field], interestInput.trim()]
+      }));
+      setInterestInput('');
+    }
+  };
+
+  const removeInterest = (index) => {
+    const field = isStudent ? 'interests' : 'mentoringAreas';
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
   };
 
+  const handleKeyPress = (e, addFunction) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addFunction();
+    }
+  };
+
   const handleSubmit = async () => {
+    if (!formData.university || !formData.degree) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isStudent) {
@@ -111,14 +144,14 @@ const ProfileSetup = () => {
             <h2 className="text-2xl font-bold mb-6">Basic Information</h2>
             <div className="space-y-4">
               <Input
-                label="University"
+                label="University *"
                 name="university"
                 value={formData.university}
                 onChange={handleChange}
                 placeholder="e.g., IIT Delhi"
               />
               <Input
-                label="Degree"
+                label="Degree *"
                 name="degree"
                 value={formData.degree}
                 onChange={handleChange}
@@ -219,61 +252,91 @@ const ProfileSetup = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <h2 className="text-2xl font-bold mb-6">Skills & {isStudent ? 'Interests' : 'Mentoring Areas'}</h2>
             <div className="space-y-6">
+              {/* Skills Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add Skills (Press Enter)
+                  Add Skills
                 </label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTag('skills')}
-                    placeholder="Add a skill"
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, addSkill)}
+                    placeholder="e.g., React, Python, JavaScript"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <Button onClick={() => addTag('skills')} size="sm">Add</Button>
+                  <Button onClick={addSkill} size="sm">Add</Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {formData.skills.map((skill, idx) => (
-                    <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2">
+                    <div
+                      key={idx}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
+                    >
                       {skill}
-                      <button onClick={() => removeTag('skills', idx)} className="font-bold">×</button>
-                    </span>
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(idx)}
+                        className="hover:bg-blue-200 rounded-full p-0.5"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
 
+              {/* Interests/Mentoring Areas Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Add {isStudent ? 'Interests' : 'Mentoring Areas'}
                 </label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTag(isStudent ? 'interests' : 'mentoringAreas')}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={interestInput}
+                    onChange={(e) => setInterestInput(e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, addInterest)}
                     placeholder={`Add an ${isStudent ? 'interest' : 'area'}`}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <Button onClick={() => addTag(isStudent ? 'interests' : 'mentoringAreas')} size="sm">Add</Button>
+                  <Button onClick={addInterest} size="sm">Add</Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(isStudent ? formData.interests : formData.mentoringAreas).map((item, idx) => (
-                    <span key={idx} className="bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center gap-2">
+                    <div
+                      key={idx}
+                      className="bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
+                    >
                       {item}
-                      <button onClick={() => removeTag(isStudent ? 'interests' : 'mentoringAreas', idx)} className="font-bold">×</button>
-                    </span>
+                      <button
+                        type="button"
+                        onClick={() => removeInterest(idx)}
+                        className="hover:bg-green-200 rounded-full p-0.5"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
 
+              {/* Bio for Alumni */}
               {!isStudent && (
-                <Input
-                  label="Bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  placeholder="Tell us about yourself"
-                  as="textarea"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    placeholder="Tell us about yourself and your mentoring experience"
+                    rows="4"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
               )}
             </div>
           </motion.div>

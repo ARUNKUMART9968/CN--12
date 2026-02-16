@@ -1,13 +1,15 @@
 import io from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-
 let socket = null;
 
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const initSocket = (token) => {
+  if (socket) return socket;
+  
   socket = io(SOCKET_URL, {
     auth: {
-      token,
+      token: token || localStorage.getItem('token'),
     },
     reconnection: true,
     reconnectionDelay: 1000,
@@ -32,16 +34,11 @@ export const initSocket = (token) => {
 
 export const getSocket = () => socket;
 
-export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-};
-
 export const emitEvent = (event, data) => {
-  if (socket) {
+  if (socket && socket.connected) {
     socket.emit(event, data);
+  } else {
+    console.warn('Socket not connected');
   }
 };
 
@@ -51,8 +48,24 @@ export const onEvent = (event, callback) => {
   }
 };
 
-export const offEvent = (event) => {
+export const offEvent = (event, callback) => {
   if (socket) {
-    socket.off(event);
+    socket.off(event, callback);
   }
+};
+
+export const disconnectSocket = () => {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+};
+
+export default {
+  initSocket,
+  getSocket,
+  emitEvent,
+  onEvent,
+  offEvent,
+  disconnectSocket,
 };

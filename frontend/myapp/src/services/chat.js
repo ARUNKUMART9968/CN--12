@@ -1,14 +1,25 @@
 import API from './api';
 
 const chatService = {
-  startChat: (receiverId) => API.post('/chat/start', { receiverId }),
-  getAllChats: (page = 1, limit = 10) => 
+  // Get all chats using YOUR actual backend route
+  getAllChats: (page = 1, limit = 20) => 
     API.get(`/chat/list?page=${page}&limit=${limit}`),
-  getMessages: (chatId, page = 1, limit = 20) => 
+  
+  // Get messages in a specific chat
+  getMessages: (chatId, page = 1, limit = 50) => 
     API.get(`/chat/${chatId}/messages?page=${page}&limit=${limit}`),
-  getUnreadCount: () => API.get('/chat/unread/count'),
-  searchChats: (query) => API.get(`/chat/search?query=${query}`),
-  archiveChat: (chatId) => API.put(`/chat/${chatId}/archive`),
+  
+  // Start a new chat with a user
+  startChat: (receiverId) => 
+    API.post('/chat/start', { receiverId }),
+  
+  // Get single chat details
+  getChat: (chatId) => 
+    API.get(`/chat/${chatId}`),
+  
+  // Delete chat
+  deleteChat: (chatId) => 
+    API.delete(`/chat/${chatId}`),
 };
 
 export default chatService;
