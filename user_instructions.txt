@@ -1,0 +1,10 @@
+I've updated the `frontend/myapp/.env.local` file to include `VITE_SOCKET_URL=http://localhost:5000`.
+
+For this change to take effect, you need to restart the frontend development server.
+
+**To restart the frontend:**
+1.  If you have a terminal running the frontend development server (`npm run dev`), please stop it (usually by pressing `Ctrl+C`).
+2.  Navigate to the `frontend/myapp` directory in your terminal.
+3.  Run `npm run dev` again to start the server.
+
+After restarting, please check your browser console and network tab again for any errors, as previously instructed. Let me know if you find any issues.

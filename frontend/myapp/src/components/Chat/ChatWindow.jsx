@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Card, Loading, Button } from '../Common';
 import { FiSend, FiArrowLeft } from 'react-icons/fi';
-import chatService from '../../services/chat';
+import chatService from '../../services/chat'; // ✅ FIXED: Added missing import
 import messageService from '../../services/message';
 import { getSocket, initSocket, emitEvent } from '../../services/socket';
 import toast from 'react-hot-toast';

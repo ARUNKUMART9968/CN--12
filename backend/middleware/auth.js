@@ -7,19 +7,24 @@ const authMiddleware = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'No token provided',
+        message: 'No token provided'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.userId = decoded.id;
-    req.user = decoded;
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || 'your_jwt_secret_key'
+    );
+
+    req.userId = decoded.userId;
+    req.role = decoded.role;
     next();
+
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid token',
-      error: error.message,
+      message: 'Invalid or expired token',
+      error: error.message
     });
   }
 };

@@ -30,7 +30,6 @@ const Navbar = () => {
     { label: 'Jobs', href: '/student/jobs' },
   ] : [
     { label: 'Dashboard', href: '/alumni/dashboard' },
-    { label: 'Students', href: '/alumni/students' },
     { label: 'Connections', href: '/alumni/connections' },
     { label: 'Messages', href: '/alumni/messages' },
     { label: 'Post Job', href: '/alumni/create-job' },

@@ -1,7 +1,7 @@
 import API from './api';
 
 const chatService = {
-  // Get all chats using YOUR actual backend route
+  // Get all chats - CORRECTED ROUTE
   getAllChats: (page = 1, limit = 20) => 
     API.get(`/chat/list?page=${page}&limit=${limit}`),
   

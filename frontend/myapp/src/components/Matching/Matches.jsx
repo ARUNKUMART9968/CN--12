@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Loading, Button } from '../Common';
 import matchingService from '../../services/matching';
 import connectionService from '../../services/connection';
+import chatService from '../../services/chat';
 import toast from 'react-hot-toast';
 
 const Matches = () => {
@@ -64,9 +65,11 @@ const Matches = () => {
     try {
       // Start chat and navigate
       const response = await chatService.startChat(receiverId);
-      navigate(`/student/chat/${response.data.chat._id}`, {
-        state: { chatId: response.data.chat._id, receiverName }
-      });
+      if (response.data && response.data.chat) {
+        navigate(`/student/chat/${response.data.chat._id}`, {
+          state: { chatId: response.data.chat._id, receiverName }
+        });
+      }
     } catch (error) {
       console.error('Failed to start chat:', error);
       toast.error('Failed to start chat');

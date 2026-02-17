@@ -1,45 +1,35 @@
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Error:', err.message);
 
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token',
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired',
-    });
-  }
-
-  // Mongoose validation errors
+  // MongoDB validation error
   if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({
       success: false,
       message: 'Validation error',
-      errors: messages,
+      errors: Object.values(err.errors).map(e => e.message)
     });
   }
 
-  // Mongoose duplicate key errors
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyPattern)[0];
+  // MongoDB cast error
+  if (err.name === 'CastError') {
     return res.status(400).json({
       success: false,
-      message: `${field} already exists`,
+      message: 'Invalid ID format'
+    });
+  }
+
+  // JWT error
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token'
     });
   }
 
   // Default error
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    message: err.message || 'Internal server error'
   });
 };
 
