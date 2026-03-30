@@ -52,14 +52,14 @@ app.use(morgan('combined'));
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/careernexus',
+      process.env.MONGODB_URI ,
       {
         useNewUrlParser: true,
         useUnifiedTopology: true
       }
     );
 
-    console.log('✓ MongoDB connected successfully');
+    console.log('✓ MongoDB connected successfully',process.env.MONGODB_URI);
     return conn;
   } catch (error) {
     console.error('✗ MongoDB connection failed:', error.message);
