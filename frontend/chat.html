@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;padding:0;">
+    <!-- MOBILE HEADER -->
+    <div style="padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary);">
+      <h2 style="font-size:1.1rem;">Messages</h2>
+    </div>
+
+    <div class="chat-layout" style="flex:1;overflow:hidden;">
+      <!-- CHAT LIST -->
+      <div class="chat-list">
+        <div class="chat-list-header">
+          Conversations
+          <div class="search-bar" style="margin-top:12px;">
+            <svg style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="chatSearch" placeholder="Search..." />
+          </div>
+        </div>
+        <div id="chatList">
+          <div style="padding:16px;">
+            <div class="skeleton" style="height:60px;margin-bottom:8px;border-radius:8px;"></div>
+            <div class="skeleton" style="height:60px;margin-bottom:8px;border-radius:8px;"></div>
+            <div class="skeleton" style="height:60px;border-radius:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT WINDOW -->
+      <div class="chat-window" id="chatWindow">
+        <div style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-muted);">
+          <div style="font-size:3rem;">💬</div>
+          <h3 style="color:var(--text-secondary);">Select a conversation</h3>
+          <p style="font-size:0.875rem;">Choose from your existing chats or start a new one</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('chat');
+  const user = getUser();
+  let socket;
+  let activeChatId = null;
+  let activeReceiverId = null;
+  let chats = [];
+
+  // Get chatId from URL if provided
+  const urlParams = new URLSearchParams(window.location.search);
+  const preloadChatId = urlParams.get('chatId');
+
+  // Init Socket.IO
+  function initSocket() {
+    socket = io('http://localhost:5000', { transports: ['websocket'] });
+
+    socket.on('connect', () => {
+      socket.emit('user_connect', user.id);
+    });
+
+    socket.on('receive_message', (data) => {
+      if (data.senderId !== user.id) {
+        appendMessage({ senderId: data.senderId, text: data.message, createdAt: data.timestamp }, false);
+        updateChatPreview(activeChatId, data.message);
+        Nav.loadBadges();
+      }
+    });
+
+    socket.on('user_typing', (data) => {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) {
+        indicator.style.display = data.isTyping ? 'block' : 'none';
+      }
+    });
+  }
+
+  async function loadChatList() {
+    try {
+      const res = await api.getChats(1, 30);
+      chats = res.chats || [];
+      renderChatList(chats);
+
+      if (preloadChatId) {
+        const chat = chats.find(c => c._id === preloadChatId);
+        if (chat) openChat(chat._id, getOtherId(chat), getOtherName(chat));
+      }
+    } catch {
+      document.getElementById('chatList').innerHTML = `
+        <div style="padding:24px;text-align:center;font-size:0.875rem;color:var(--text-muted);">
+          Could not load chats. Check server connection.
+        </div>`;
+    }
+  }
+
+  function getOtherId(chat) {
+    const ids = chat.users || [];
+    return ids.find(id => id !== user.id) || ids[0];
+  }
+
+  function getOtherName(chat) {
+    return chat.otherUserName || 'User';
+  }
+
+  function renderChatList(chatItems) {
+    const list = document.getElementById('chatList');
+    if (!chatItems.length) {
+      list.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted);">
+        <div style="font-size:2rem;margin-bottom:8px;">💬</div>
+        <p style="font-size:0.875rem;">No conversations yet.<br>Connect with someone to start chatting!</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = chatItems.map(chat => {
+      const otherId = getOtherId(chat);
+      const otherName = getOtherName(chat);
+      return `<div class="chat-item ${chat._id === activeChatId ? 'active' : ''}"
+               id="chatItem_${chat._id}"
+               onclick="openChat('${chat._id}', '${otherId}', '${otherName}')">
+        <div class="avatar" style="width:40px;height:40px;font-size:0.85rem;">${Helpers.initials(otherName)}</div>
+        <div class="chat-item-info">
+          <div class="chat-item-name">${otherName}</div>
+          <div class="chat-item-preview">${chat.lastMessage || 'Start a conversation...'}</div>
+        </div>
+        <div class="chat-item-time">${chat.lastMessageTime ? Helpers.timeAgo(chat.lastMessageTime) : ''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateChatPreview(chatId, message) {
+    const item = document.querySelector(`#chatItem_${chatId} .chat-item-preview`);
+    if (item) item.textContent = message;
+  }
+
+  async function openChat(chatId, receiverId, receiverName) {
+    activeChatId = chatId;
+    activeReceiverId = receiverId;
+
+    // Update active state
+    document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+    const item = document.getElementById(`chatItem_${chatId}`);
+    if (item) item.classList.add('active');
+
+    const window_ = document.getElementById('chatWindow');
+    window_.innerHTML = `
+      <div class="chat-header">
+        <div class="avatar" style="width:36px;height:36px;font-size:0.8rem;">${Helpers.initials(receiverName)}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:0.9rem;">${receiverName}</div>
+          <div id="typingIndicator" style="display:none;font-size:0.75rem;color:var(--accent);">Typing...</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="window.location.href='connections.html'">View Profile</button>
+      </div>
+      <div class="chat-messages" id="messages">
+        <div style="text-align:center;padding:24px;">
+          <div style="width:28px;height:28px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput" placeholder="Type your message..." rows="1"
+                  onkeydown="handleKey(event)"
+                  oninput="autoResize(this);emitTyping()"></textarea>
+        <button class="btn btn-primary btn-icon" onclick="sendMessage()" style="width:40px;height:40px;">
+          <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>`;
+
+    // Load messages
+    try {
+      const res = await api.getChatMessages(chatId, 1, 50);
+      const messages = (res.messages || []).reverse();
+      const container = document.getElementById('messages');
+      if (!messages.length) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);">
+          <div style="font-size:2rem;margin-bottom:8px;">👋</div>
+          <p>Say hello to ${receiverName}!</p>
+        </div>`;
+      } else {
+        container.innerHTML = '';
+        messages.forEach(m => appendMessage(m, m.senderId === user.id || m.senderId?.toString() === user.id));
+        scrollToBottom();
+      }
+    } catch {
+      document.getElementById('messages').innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">Could not load messages</div>`;
+    }
+  }
+
+  function appendMessage(msg, isSent) {
+    const container = document.getElementById('messages');
+    if (!container) return;
+
+    const placeholder = container.querySelector('[style*="text-align:center"]');
+    if (placeholder) placeholder.remove();
+
+    const div = document.createElement('div');
+    div.className = `message ${isSent ? 'sent' : 'received'}`;
+    div.innerHTML = `
+      <div class="avatar" style="width:28px;height:28px;font-size:0.65rem;flex-shrink:0;">${Helpers.initials(isSent ? user.name : 'U')}</div>
+      <div>
+        <div class="message-bubble">${escapeHtml(msg.text)}</div>
+        <div class="message-time">${Helpers.timeAgo(msg.createdAt)}</div>
+      </div>`;
+    container.appendChild(div);
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    const container = document.getElementById('messages');
+    if (container) container.scrollTop = container.scrollHeight;
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  let typingTimeout;
+  function emitTyping() {
+    if (!socket || !activeReceiverId) return;
+    socket.emit('typing', { receiverId: activeReceiverId, isTyping: true, senderName: user.name });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      socket.emit('typing', { receiverId: activeReceiverId, isTyping: false, senderName: user.name });
+    }, 2000);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || !activeChatId) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    // Optimistic UI
+    appendMessage({ text, senderId: user.id, createdAt: new Date() }, true);
+
+    // Emit via socket
+    if (socket && activeReceiverId) {
+      socket.emit('send_message', {
+        chatId: activeChatId,
+        receiverId: activeReceiverId,
+        message: text,
+        senderId: user.id,
+        senderName: user.name,
+      });
+    }
+
+    // Save to DB
+    try {
+      await api.sendMessage(activeChatId, activeReceiverId, text);
+      updateChatPreview(activeChatId, text);
+    } catch (e) { Toast.error('Failed to send message'); }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+  }
+
+  document.getElementById('chatSearch').addEventListener('input', (e) => {
+    const val = e.target.value.toLowerCase();
+    const filtered = val ? chats.filter(c => getOtherName(c).toLowerCase().includes(val)) : chats;
+    renderChatList(filtered);
+  });
+
+  initSocket();
+  loadChatList();
+</script>
+</body>
+</html>

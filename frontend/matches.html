@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Matches — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .run-matching-banner {
+      background: linear-gradient(135deg, rgba(108,99,255,0.15) 0%, rgba(0,212,170,0.08) 100%);
+      border: 1px solid rgba(108,99,255,0.25);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .detail-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      position: sticky;
+      top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">AI Matches</h1>
+        <p class="page-subtitle">Graph-Based Hierarchical Matching connects you with ideal alumni mentors</p>
+      </div>
+      <div class="flex" style="gap:10px;">
+        <div class="search-bar" style="width:220px;">
+          <svg style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search matches..." />
+        </div>
+        <button class="btn btn-primary" onclick="runMatching()" id="runBtn">
+          <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Run AI Matching
+        </button>
+      </div>
+    </div>
+
+    <div class="content-area page-enter">
+      <!-- MATCHING BANNER -->
+      <div class="run-matching-banner" id="matchingBanner">
+        <div>
+          <h3 style="font-size:1rem; margin-bottom:4px;">🤖 GBHM Algorithm Ready</h3>
+          <p style="font-size:0.875rem; color:var(--text-secondary);">Run the AI matching engine to find your best alumni mentors based on university, skills, interests & more.</p>
+        </div>
+        <button class="btn btn-primary" onclick="runMatching()">Find My Matches</button>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="flex" style="gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm filter-btn active" data-filter="all" onclick="filterMatches('all', this)">All Matches</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="university" onclick="filterMatches('university', this)">Same University</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="industry" onclick="filterMatches('industry', this)">Same Industry</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="available" onclick="filterMatches('available', this)">Available</button>
+      </div>
+
+      <!-- STATUS -->
+      <div id="matchStatus" class="hidden" style="margin-bottom:16px;"></div>
+
+      <!-- MATCHES GRID -->
+      <div id="matchesContainer">
+        <div class="match-grid" id="matchGrid">
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+          <div class="skeleton" style="height:240px;border-radius:18px;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ALUMNI DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="modalName">Alumni Details</h3>
+      <button class="modal-close" data-modal-close="detailModal">✕</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('matches');
+  const user = getUser();
+  let allMatches = [];
+  let activeFilter = 'all';
+
+  async function loadMatches() {
+    try {
+      const res = await api.getStudentMatches(user.id, 1, 50);
+      allMatches = res.recommendations || [];
+      document.getElementById('matchingBanner').style.display = allMatches.length > 0 ? 'none' : '';
+      renderMatches(allMatches);
+    } catch {
+      renderMatches([]);
+    }
+  }
+
+  function renderMatches(matches) {
+    const grid = document.getElementById('matchGrid');
+
+    // Apply search filter
+    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = matches;
+    if (searchVal) {
+      filtered = filtered.filter(m => {
+        const alumni = m.alumniId || {};
+        return (alumni.name || '').toLowerCase().includes(searchVal)
+          || (m.commonSkills || []).some(s => s.toLowerCase().includes(searchVal));
+      });
+    }
+
+    // Apply category filter
+    if (activeFilter === 'university') {
+      filtered = filtered.filter(m => m.scoreBreakdown?.university > 0);
+    } else if (activeFilter === 'industry') {
+      filtered = filtered.filter(m => m.scoreBreakdown?.industry > 0);
+    } else if (activeFilter === 'available') {
+      filtered = filtered.filter(m => m.scoreBreakdown?.availability > 0);
+    }
+
+    if (!filtered.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+        <div class="empty-state-icon">🎯</div>
+        <h3>${allMatches.length ? 'No matches found with this filter' : 'No matches yet'}</h3>
+        <p>${allMatches.length ? 'Try a different filter' : 'Run the AI matching engine to discover alumni mentors'}</p>
+        ${!allMatches.length ? `<button class="btn btn-primary" onclick="runMatching()">Run AI Matching</button>` : ''}
+      </div></div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(m => {
+      const pct = Helpers.scorePercent(m.totalScore);
+      const grade = Helpers.scoreGrade(pct);
+      const alumni = m.alumniId || {};
+      const skills = (m.commonSkills || []).slice(0, 3);
+
+      return `<div class="match-card" onclick="openDetail('${m._id}', '${m.alumniId}')">
+        <div class="match-header">
+          <div class="avatar lg">${Helpers.initials(alumni.name || 'A')}</div>
+          <div class="match-info">
+            <h4>${alumni.name || 'Alumni'}</h4>
+            <div class="company">${alumni.company || '—'} · ${alumni.designation || ''}</div>
+            <div class="location">
+              ${alumni.location ? `📍 ${alumni.location}` : ''}
+              ${m.scoreBreakdown?.availability > 0 ? `<span class="availability-dot"></span>Available` : ''}
+            </div>
+          </div>
+          <div class="match-score-badge" style="background:linear-gradient(135deg, ${grade.color}cc, ${grade.color}88)">
+            ${pct}% ${grade.label}
+          </div>
+        </div>
+
+        <div class="match-skills">
+          ${skills.map(s => `<span class="skill-badge match">${s}</span>`).join('')}
+          ${(m.commonSkills || []).length > 3 ? `<span class="skill-badge">+${m.commonSkills.length - 3}</span>` : ''}
+          ${!skills.length ? `<span class="text-muted text-xs">No common skills yet</span>` : ''}
+        </div>
+
+        <div class="score-bars">
+          ${m.scoreBreakdown?.university > 0 ? scoreBar('University Match', 100) : ''}
+          ${skillBar('Skills', m.scoreBreakdown?.skills || 0)}
+          ${skillBar('Interests', m.scoreBreakdown?.interests || 0)}
+        </div>
+
+        <div class="match-actions">
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();sendConnection('${m.alumniId}')">
+            Connect
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();startChat('${m.alumniId}')">
+            Message
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openDetail('${m._id}', '${m.alumniId}')">
+            Details
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function scoreBar(label, pct) {
+    return `<div class="score-bar-item">
+      <div class="score-bar-label"><span>${label}</span><span>${pct}%</span></div>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+
+  function skillBar(label, rawScore) {
+    const pct = Math.min(100, Math.round((rawScore / 360) * 100));
+    return scoreBar(label, pct);
+  }
+
+  async function runMatching() {
+    const btn = document.getElementById('runBtn');
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    const status = document.getElementById('matchStatus');
+    status.className = '';
+    status.innerHTML = `<div class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:20px;height:20px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;flex-shrink:0;"></div>
+      <span style="font-size:0.875rem;">Running GBHM algorithm against all alumni profiles...</span>
+    </div>`;
+    status.classList.remove('hidden');
+
+    try {
+      const res = await api.runMatching(user.id);
+      allMatches = res.matches || [];
+      document.getElementById('matchingBanner').style.display = 'none';
+      status.innerHTML = `<div class="card" style="padding:14px 18px;border-color:rgba(0,212,170,0.3);background:rgba(0,212,170,0.05);">
+        ✅ Found <strong>${allMatches.length}</strong> alumni matches ranked by compatibility score
+      </div>`;
+      // Re-fetch from DB for full data
+      loadMatches();
+      setTimeout(() => status.classList.add('hidden'), 4000);
+    } catch(e) {
+      status.innerHTML = `<div class="card" style="padding:14px 18px;border-color:rgba(255,92,141,0.3);background:rgba(255,92,141,0.05);">
+        ❌ ${e.message} — Make sure the Python GBHM service is running on port 8000
+      </div>`;
+    } finally {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+
+  async function openDetail(matchId, alumniId) {
+    Modal.open('detailModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `<div style="text-align:center;padding:40px;"><div style="width:40px;height:40px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div></div>`;
+
+    try {
+      const res = await api.getAlumniProfile(alumniId);
+      const p = res.profile;
+      document.getElementById('modalName').textContent = p.name;
+
+      content.innerHTML = `
+        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;">
+          <div class="avatar lg">${Helpers.initials(p.name)}</div>
+          <div>
+            <h3 style="font-size:1.1rem;">${p.name}</h3>
+            <div style="color:var(--text-secondary);font-size:0.9rem;">${p.designation} at ${p.company}</div>
+            <div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">${p.industry} · ${p.location || 'Location N/A'} · ${p.yearsOfExperience}y exp</div>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+              <span class="badge ${p.availability === 'Available' ? 'badge-green' : 'badge-gray'}">${p.availability}</span>
+              ${p.canMentor ? '<span class="badge badge-blue">Mentors</span>' : ''}
+              ${p.canHire ? '<span class="badge badge-gold">Hires</span>' : ''}
+            </div>
+          </div>
+        </div>
+
+        ${p.bio ? `<div class="profile-section">
+          <div class="profile-section-title">About</div>
+          <p style="font-size:0.875rem;color:var(--text-secondary);">${p.bio}</p>
+        </div>` : ''}
+
+        ${p.skills?.length ? `<div class="profile-section">
+          <div class="profile-section-title">Skills</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${p.skills.map(s => `<span class="skill-badge">${s}</span>`).join('')}</div>
+        </div>` : ''}
+
+        ${p.mentoringAreas?.length ? `<div class="profile-section">
+          <div class="profile-section-title">Mentoring Areas</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${p.mentoringAreas.map(s => `<span class="skill-badge match">${s}</span>`).join('')}</div>
+        </div>` : ''}
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn btn-primary flex-1" onclick="sendConnection('${p.userId}');Modal.close('detailModal')">Connect</button>
+          <button class="btn btn-secondary flex-1" onclick="startChat('${p.userId}');Modal.close('detailModal')">Message</button>
+          ${p.linkedinProfile ? `<a href="${p.linkedinProfile}" target="_blank" class="btn btn-ghost">LinkedIn</a>` : ''}
+        </div>`;
+    } catch {
+      content.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:32px;">Could not load profile</p>`;
+    }
+  }
+
+  async function sendConnection(alumniId) {
+    try {
+      await api.sendConnection(alumniId);
+      Toast.success('Connection request sent!');
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  async function startChat(receiverId) {
+    try {
+      const res = await api.startChat(receiverId);
+      window.location.href = `chat.html?chatId=${res.chat._id}`;
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  function filterMatches(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.className = 'btn btn-ghost btn-sm filter-btn');
+    btn.className = 'btn btn-secondary btn-sm filter-btn active';
+    renderMatches(allMatches);
+  }
+
+  document.getElementById('searchInput').addEventListener('input', Helpers.debounce(() => renderMatches(allMatches), 300));
+
+  loadMatches();
+</script>
+</body>
+</html>

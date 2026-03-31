@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobs — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .job-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .job-card:hover { border-color: var(--accent); box-shadow: var(--shadow-accent); transform: translateY(-2px); }
+    .job-type-badge { font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="jobsTitle">Job Board</h1>
+        <p class="page-subtitle">Opportunities posted directly by alumni in our network</p>
+      </div>
+      <div class="flex" style="gap:10px;">
+        <div class="search-bar" style="width:220px;">
+          <svg style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="jobSearch" placeholder="Search jobs..." />
+        </div>
+        <button class="btn btn-primary" id="postJobBtn" onclick="Modal.open('postJobModal')" style="display:none;">
+          + Post Job
+        </button>
+      </div>
+    </div>
+
+    <div class="content-area page-enter">
+      <!-- FILTERS -->
+      <div class="flex" style="gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+        <button class="btn btn-secondary btn-sm filter-btn" data-filter="" onclick="loadJobs('', this)">All Jobs</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="open" onclick="loadJobs('open', this)">Open</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="Full-time" onclick="filterByType('Full-time', this)">Full-time</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="Internship" onclick="filterByType('Internship', this)">Internship</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="Part-time" onclick="filterByType('Part-time', this)">Part-time</button>
+        <button class="btn btn-ghost btn-sm filter-btn" data-filter="Contract" onclick="filterByType('Contract', this)">Contract</button>
+      </div>
+
+      <div class="grid-auto stagger" id="jobsGrid">
+        <div class="skeleton" style="height:200px;border-radius:18px;"></div>
+        <div class="skeleton" style="height:200px;border-radius:18px;"></div>
+        <div class="skeleton" style="height:200px;border-radius:18px;"></div>
+      </div>
+
+      <div style="text-align:center;margin-top:24px;">
+        <button class="btn btn-ghost" id="loadMoreBtn" onclick="loadMore()" style="display:none;">Load More</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="jobDetailModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div>
+        <h3 id="jobModalTitle">Job Details</h3>
+        <p id="jobModalCompany" style="color:var(--text-secondary);font-size:0.875rem;margin-top:2px;"></p>
+      </div>
+      <button class="modal-close" data-modal-close="jobDetailModal">✕</button>
+    </div>
+    <div id="jobModalContent"></div>
+  </div>
+</div>
+
+<!-- POST JOB MODAL -->
+<div class="modal-overlay" id="postJobModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <h3>Post a New Job</h3>
+      <button class="modal-close" data-modal-close="postJobModal">✕</button>
+    </div>
+
+    <form id="postJobForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Job Title *</label>
+          <input type="text" id="j_title" class="form-input" placeholder="e.g. Software Engineer" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company *</label>
+          <input type="text" id="j_company" class="form-input" placeholder="Your company name" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Job Type *</label>
+          <select id="j_jobType" class="form-select" required>
+            <option>Full-time</option><option>Part-time</option>
+            <option>Internship</option><option>Contract</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Experience Level *</label>
+          <select id="j_expLevel" class="form-select" required>
+            <option>Fresher</option><option>Junior</option>
+            <option>Mid-level</option><option>Senior</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Location *</label>
+          <input type="text" id="j_location" class="form-input" placeholder="e.g. Bangalore / Remote" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Application Deadline *</label>
+          <input type="date" id="j_deadline" class="form-input" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Min Salary (₹ LPA)</label>
+          <input type="number" id="j_salMin" class="form-input" placeholder="e.g. 5" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Salary (₹ LPA)</label>
+          <input type="number" id="j_salMax" class="form-input" placeholder="e.g. 12" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Required Skills (press Enter)</label>
+        <div class="tags-input-container" id="j_skillsContainer">
+          <input type="text" placeholder="React, Node.js, SQL..." />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Description *</label>
+        <textarea id="j_description" class="form-textarea" rows="5" placeholder="Describe the role, responsibilities, and requirements..." required></textarea>
+      </div>
+
+      <div id="postJobError" class="form-error hidden" style="margin-bottom:12px;"></div>
+
+      <div class="flex" style="justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-ghost" data-modal-close="postJobModal">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="postJobSubmit">Post Job</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('jobs');
+  const user = getUser();
+  const isAlumni = user?.role === 'alumni';
+
+  let allJobs = [];
+  let page = 1;
+  let hasMore = false;
+  let typeFilter = '';
+
+  if (isAlumni) {
+    document.getElementById('jobsTitle').textContent = 'Manage Jobs';
+    document.getElementById('postJobBtn').style.display = 'flex';
+  }
+
+  const jobSkillsTag = new TagsInput(document.getElementById('j_skillsContainer'));
+
+  // Set min date for deadline
+  document.getElementById('j_deadline').min = new Date().toISOString().split('T')[0];
+
+  async function loadJobs(status = '', btn) {
+    if (btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.className = 'btn btn-ghost btn-sm filter-btn');
+      btn.className = 'btn btn-secondary btn-sm filter-btn';
+    }
+    typeFilter = '';
+    page = 1;
+    try {
+      const res = await api.getJobs(status, 1, 12);
+      allJobs = res.jobs || [];
+      hasMore = page < res.totalPages;
+      document.getElementById('loadMoreBtn').style.display = hasMore ? '' : 'none';
+      renderJobs(allJobs);
+    } catch { renderJobs([]); }
+  }
+
+  function filterByType(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.className = 'btn btn-ghost btn-sm filter-btn');
+    btn.className = 'btn btn-secondary btn-sm filter-btn';
+    typeFilter = type;
+    const filtered = type ? allJobs.filter(j => j.jobType === type) : allJobs;
+    renderJobs(filtered);
+  }
+
+  function renderJobs(jobs) {
+    const grid = document.getElementById('jobsGrid');
+    const search = document.getElementById('jobSearch').value.toLowerCase();
+    let filtered = jobs;
+    if (search) filtered = jobs.filter(j =>
+      j.title?.toLowerCase().includes(search) ||
+      j.company?.toLowerCase().includes(search) ||
+      j.location?.toLowerCase().includes(search)
+    );
+
+    if (!filtered.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+        <div class="empty-state-icon">💼</div>
+        <h3>No jobs found</h3>
+        <p>${isAlumni ? 'Post your first job to attract top talent' : 'No jobs available right now. Check back soon!'}</p>
+        ${isAlumni ? `<button class="btn btn-primary" onclick="Modal.open('postJobModal')">Post a Job</button>` : ''}
+      </div></div>`;
+      return;
+    }
+
+    const typeColors = {
+      'Full-time': 'badge-green',
+      'Internship': 'badge-blue',
+      'Part-time': 'badge-gold',
+      'Contract': 'badge-gray',
+    };
+
+    const expColors = {
+      'Fresher': 'badge-green',
+      'Junior': 'badge-blue',
+      'Mid-level': 'badge-gold',
+      'Senior': 'badge-red',
+    };
+
+    grid.innerHTML = filtered.map(j => {
+      const deadline = new Date(j.deadline);
+      const isExpired = deadline < new Date();
+      const daysLeft = Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24));
+      const salary = j.salary?.min ? `₹${j.salary.min}–${j.salary.max}L` : 'Salary TBD';
+
+      return `<div class="job-card" onclick="openJobDetail('${j._id}')">
+        <div class="flex-between mb-12">
+          <div style="width:44px;height:44px;background:var(--bg-input);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🏢</div>
+          <span class="badge ${typeColors[j.jobType] || 'badge-gray'}">${j.jobType}</span>
+        </div>
+        <h3 style="font-size:1rem;margin-bottom:4px;">${j.title}</h3>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">${j.company}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:0.78rem;color:var(--text-muted);margin-bottom:14px;">
+          <span>📍 ${j.location}</span>
+          <span>💰 ${salary}</span>
+          <span class="badge ${expColors[j.experienceLevel] || 'badge-gray'}" style="font-size:0.7rem;">${j.experienceLevel}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
+          ${(j.skillsRequired || []).slice(0,3).map(s => `<span class="skill-badge" style="font-size:0.72rem;">${s}</span>`).join('')}
+          ${(j.skillsRequired || []).length > 3 ? `<span class="skill-badge">+${j.skillsRequired.length - 3}</span>` : ''}
+        </div>
+        <div class="flex-between" style="font-size:0.75rem;color:${isExpired ? 'var(--rose)' : daysLeft <= 7 ? 'var(--gold)' : 'var(--text-muted)'};">
+          <span>${isExpired ? '⚠ Expired' : `⏰ ${daysLeft}d left`}</span>
+          <span>${j.applicants?.length || 0} applicants</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function openJobDetail(id) {
+    Modal.open('jobDetailModal');
+    const content = document.getElementById('jobModalContent');
+    content.innerHTML = `<div style="text-align:center;padding:40px;"><div style="width:40px;height:40px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div></div>`;
+
+    try {
+      const res = await api.getJob(id);
+      const j = res.job;
+      document.getElementById('jobModalTitle').textContent = j.title;
+      document.getElementById('jobModalCompany').textContent = `${j.company} · ${j.location}`;
+      const salary = j.salary?.min ? `₹${j.salary.min}–${j.salary.max}L per annum` : 'Salary not disclosed';
+      const deadline = Helpers.formatDate(j.deadline);
+      const applied = (j.applicants || []).some(a => a.studentId === user?.id);
+
+      content.innerHTML = `
+        <div class="flex" style="flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+          <span class="badge badge-blue">${j.jobType}</span>
+          <span class="badge badge-gold">${j.experienceLevel}</span>
+          <span class="badge ${j.status === 'open' ? 'badge-green' : 'badge-gray'}">${j.status}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--bg-input);border-radius:10px;padding:16px;margin-bottom:18px;font-size:0.85rem;">
+          <div><span style="color:var(--text-muted);">Location</span><div style="font-weight:600;margin-top:2px;">📍 ${j.location}</div></div>
+          <div><span style="color:var(--text-muted);">Salary</span><div style="font-weight:600;margin-top:2px;">💰 ${salary}</div></div>
+          <div><span style="color:var(--text-muted);">Deadline</span><div style="font-weight:600;margin-top:2px;">📅 ${deadline}</div></div>
+          <div><span style="color:var(--text-muted);">Applicants</span><div style="font-weight:600;margin-top:2px;">👥 ${j.applicants?.length || 0}</div></div>
+        </div>
+
+        ${j.skillsRequired?.length ? `
+        <div class="profile-section">
+          <div class="profile-section-title">Required Skills</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${j.skillsRequired.map(s => `<span class="skill-badge">${s}</span>`).join('')}</div>
+        </div>` : ''}
+
+        <div class="profile-section">
+          <div class="profile-section-title">Job Description</div>
+          <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.7;white-space:pre-line;">${j.description}</p>
+        </div>
+
+        ${!isAlumni ? `<button class="btn btn-primary btn-full" onclick="applyJob('${j._id}', this)" ${applied ? 'disabled' : ''}>
+          ${applied ? '✓ Already Applied' : 'Apply Now'}
+        </button>` : `
+        <div style="margin-top:16px;">
+          <div class="profile-section-title">Applicants (${j.applicants?.length || 0})</div>
+          ${(j.applicants || []).length ? j.applicants.map(a => `
+            <div class="flex-between" style="padding:10px;background:var(--bg-input);border-radius:8px;margin-bottom:6px;">
+              <span style="font-size:0.85rem;">${a.studentId}</span>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-success btn-sm" onclick="updateApplicantStatus('${j._id}','${a.studentId}','shortlisted',this)">Shortlist</button>
+                <button class="btn btn-danger btn-sm" onclick="updateApplicantStatus('${j._id}','${a.studentId}','rejected',this)">Reject</button>
+              </div>
+            </div>`).join('') : '<p style="color:var(--text-muted);font-size:0.875rem;">No applicants yet</p>'}
+        </div>`}`;
+    } catch {
+      content.innerHTML = `<p style="text-align:center;color:var(--text-muted);padding:32px;">Could not load job details</p>`;
+    }
+  }
+
+  async function applyJob(jobId, btn) {
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+    try {
+      await api.applyJob(jobId);
+      btn.textContent = '✓ Applied!';
+      btn.classList.remove('btn-loading');
+      Toast.success('Application submitted!');
+    } catch(e) {
+      Toast.error(e.message);
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+
+  async function updateApplicantStatus(jobId, studentId, status, btn) {
+    try {
+      await api.updateApplicant(jobId, studentId, status);
+      btn.closest('.flex-between').querySelector('.badge')?.remove();
+      const span = document.createElement('span');
+      span.className = `badge ${status === 'shortlisted' ? 'badge-green' : 'badge-red'}`;
+      span.textContent = status;
+      btn.parentElement.innerHTML = '';
+      btn.closest('.flex-between').appendChild(span);
+      Toast.success(`Applicant ${status}!`);
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  document.getElementById('postJobForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('postJobSubmit');
+    const errEl = document.getElementById('postJobError');
+    errEl.classList.add('hidden');
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    try {
+      await api.createJob({
+        title: document.getElementById('j_title').value.trim(),
+        company: document.getElementById('j_company').value.trim(),
+        jobType: document.getElementById('j_jobType').value,
+        experienceLevel: document.getElementById('j_expLevel').value,
+        location: document.getElementById('j_location').value.trim(),
+        deadline: document.getElementById('j_deadline').value,
+        salary: {
+          min: parseInt(document.getElementById('j_salMin').value) || 0,
+          max: parseInt(document.getElementById('j_salMax').value) || 0,
+          currency: 'INR',
+        },
+        skillsRequired: jobSkillsTag.getTags(),
+        description: document.getElementById('j_description').value.trim(),
+      });
+      Modal.close('postJobModal');
+      Toast.success('Job posted successfully!');
+      loadJobs();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('jobSearch').addEventListener('input', Helpers.debounce(() => renderJobs(allJobs), 300));
+
+  loadJobs('open', document.querySelector('[data-filter="open"]'));
+</script>
+</body>
+</html>

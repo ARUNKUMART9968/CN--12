@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="welcomeTitle">Good morning 👋</h1>
+        <p class="page-subtitle" id="welcomeSubtitle">Here's what's happening in your network</p>
+      </div>
+      <button class="btn btn-primary" id="primaryAction" onclick="window.location.href='matches.html'">
+        <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        Find Matches
+      </button>
+    </div>
+
+    <div class="content-area page-enter">
+      <!-- STATS -->
+      <div class="stats-grid stagger" id="statsGrid">
+        <div class="stat-card" style="--stat-color: #6c63ff; --stat-bg: rgba(108,99,255,0.1)">
+          <div class="stat-icon">
+            <svg style="width:18px;height:18px;fill:#6c63ff" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          </div>
+          <div class="stat-value" id="stat1">—</div>
+          <div class="stat-label" id="statLabel1">Connections</div>
+        </div>
+        <div class="stat-card" style="--stat-color: #00d4aa; --stat-bg: rgba(0,212,170,0.1)">
+          <div class="stat-icon">
+            <svg style="width:18px;height:18px;fill:#00d4aa" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="stat-value" id="stat2">—</div>
+          <div class="stat-label" id="statLabel2">Matches Found</div>
+        </div>
+        <div class="stat-card" style="--stat-color: #f5a623; --stat-bg: rgba(245,166,35,0.1)">
+          <div class="stat-icon">
+            <svg style="width:18px;height:18px;fill:#f5a623" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div class="stat-value" id="stat3">—</div>
+          <div class="stat-label" id="statLabel3">Jobs Available</div>
+        </div>
+        <div class="stat-card" style="--stat-color: #ff5c8d; --stat-bg: rgba(255,92,141,0.1)">
+          <div class="stat-icon">
+            <svg style="width:18px;height:18px;fill:#ff5c8d" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="stat-value" id="stat4">—</div>
+          <div class="stat-label">Unread Messages</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="grid-2" style="gap: 24px; align-items: start;">
+        <!-- TOP MATCHES / STUDENTS -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="font-size:1rem;" id="topListTitle">Top Matches</h3>
+            <a href="matches.html" class="btn btn-ghost btn-sm">View all</a>
+          </div>
+          <div id="topMatchesList">
+            <div style="padding: 48px 24px; text-align:center; color: var(--text-muted);">
+              <div class="skeleton" style="height:60px; margin-bottom:12px;"></div>
+              <div class="skeleton" style="height:60px; margin-bottom:12px;"></div>
+              <div class="skeleton" style="height:60px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Profile Completeness -->
+          <div class="card">
+            <div class="flex-between mb-16">
+              <h3 style="font-size:1rem;">Profile Strength</h3>
+              <span class="badge badge-blue" id="profileStrengthLabel">Loading</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:20px;">
+              <div class="progress-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="bg-circle" cx="40" cy="40" r="35"/>
+                  <circle class="progress-circle" id="progressCircle" cx="40" cy="40" r="35"/>
+                </svg>
+                <div class="progress-ring-value" id="progressValue">0%</div>
+              </div>
+              <div id="profileTips" style="font-size:0.82rem; color: var(--text-secondary);">
+                Loading profile...
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Connections -->
+          <div class="card">
+            <div class="flex-between mb-16">
+              <h3 style="font-size:1rem;">Pending Requests</h3>
+              <a href="connections.html" class="btn btn-ghost btn-sm">View all</a>
+            </div>
+            <div id="pendingList">
+              <div class="skeleton" style="height:48px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:48px;"></div>
+            </div>
+          </div>
+
+          <!-- Recent Jobs -->
+          <div class="card">
+            <div class="flex-between mb-16">
+              <h3 style="font-size:1rem;">Recent Jobs</h3>
+              <a href="jobs.html" class="btn btn-ghost btn-sm">View all</a>
+            </div>
+            <div id="recentJobsList">
+              <div class="skeleton" style="height:48px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:48px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('dashboard');
+  const user = getUser();
+  if (!user) window.location.href = 'login.html';
+
+  const isAlumni = user.role === 'alumni';
+
+  // Welcome message
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('welcomeTitle').textContent = `${greeting}, ${user.name.split(' ')[0]} 👋`;
+
+  if (isAlumni) {
+    document.getElementById('statLabel1').textContent = 'Student Requests';
+    document.getElementById('statLabel2').textContent = 'Profile Views';
+    document.getElementById('statLabel3').textContent = 'Jobs Posted';
+    document.getElementById('topListTitle').textContent = 'Recent Connections';
+    document.getElementById('primaryAction').textContent = '+ Post Job';
+    document.getElementById('primaryAction').onclick = () => window.location.href = 'jobs.html';
+  }
+
+  // Progress ring animation
+  function setProgress(pct) {
+    const circle = document.getElementById('progressCircle');
+    const circumference = 2 * Math.PI * 35;
+    const offset = circumference - (pct / 100) * circumference;
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = offset;
+    document.getElementById('progressValue').textContent = pct + '%';
+    const grade = Helpers.scoreGrade(pct);
+    circle.style.stroke = grade.color;
+    const label = document.getElementById('profileStrengthLabel');
+    label.textContent = grade.label;
+    label.style.background = `${grade.color}18`;
+    label.style.color = grade.color;
+    label.style.borderColor = `${grade.color}30`;
+  }
+
+  // Load profile to calc completeness
+  async function loadProfile() {
+    try {
+      let profile;
+      if (isAlumni) {
+        const res = await api.getAlumniProfile(user.id);
+        profile = res.profile;
+      } else {
+        const res = await api.getStudentProfile(user.id);
+        profile = res.profile;
+      }
+
+      let filled = 0;
+      const fields = isAlumni
+        ? ['name','email','university','degree','company','industry','skills','interests','bio','location','availability']
+        : ['name','email','university','degree','skills','interests','careerGoals','preferredIndustry','linkedinProfile'];
+
+      fields.forEach(f => {
+        if (profile[f] && (Array.isArray(profile[f]) ? profile[f].length > 0 : profile[f])) filled++;
+      });
+
+      const pct = Math.round((filled / fields.length) * 100);
+      setProgress(pct);
+
+      const tips = [];
+      if (!profile.bio && isAlumni) tips.push('Add a bio');
+      if (!profile.skills?.length) tips.push('Add your skills');
+      if (!profile.location) tips.push('Add your location');
+      if (!isAlumni && !profile.linkedinProfile) tips.push('Add LinkedIn');
+
+      document.getElementById('profileTips').innerHTML = tips.length
+        ? `<div style="margin-bottom:8px; font-weight:600; color:var(--text-secondary)">Complete your profile:</div>
+           ${tips.map(t => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+             <span style="color:var(--accent);font-size:0.7rem;">●</span>${t}</div>`).join('')}
+           <a href="profile.html" class="btn btn-primary btn-sm" style="margin-top:10px;">Edit Profile</a>`
+        : `<div style="color:var(--teal); font-weight:600;">✓ Profile complete!</div>
+           <div style="font-size:0.8rem;margin-top:4px;">You're ready to connect.</div>`;
+    } catch {
+      setProgress(20);
+      document.getElementById('profileTips').innerHTML = `<a href="profile-setup.html" class="btn btn-primary btn-sm">Complete Setup</a>`;
+    }
+  }
+
+  // Load matches / connections for dashboard
+  async function loadTopMatches() {
+    const container = document.getElementById('topMatchesList');
+    try {
+      if (!isAlumni) {
+        const res = await api.getStudentMatches(user.id, 1, 5);
+        const matches = res.recommendations || [];
+        document.getElementById('stat2').textContent = res.total || 0;
+
+        if (!matches.length) {
+          container.innerHTML = `<div class="empty-state" style="padding:32px">
+            <div class="empty-state-icon">🎯</div>
+            <h3>No matches yet</h3>
+            <p>Complete your profile and run the AI matching engine</p>
+            <button class="btn btn-primary btn-sm" onclick="runMatching()">Run AI Matching</button>
+          </div>`;
+          return;
+        }
+
+        container.innerHTML = matches.map(m => `
+          <div class="flex-between" style="padding:14px 24px; border-bottom:1px solid var(--border); cursor:pointer;"
+               onclick="window.location.href='matches.html'">
+            <div class="flex" style="gap:12px; align-items:center;">
+              <div class="avatar" style="width:36px;height:36px;font-size:0.75rem;">${Helpers.initials(m.alumniId?.name || 'A')}</div>
+              <div>
+                <div style="font-size:0.875rem;font-weight:600;">${m.alumniId?.name || 'Alumni'}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">${m.commonSkills?.slice(0,2).join(', ') || 'Profile match'}</div>
+              </div>
+            </div>
+            <div>
+              <div class="badge badge-blue">${Helpers.scorePercent(m.totalScore)}%</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        const res = await api.getConnections('accepted', 1, 5);
+        const connections = res.connections || [];
+        document.getElementById('stat2').textContent = res.total || 0;
+
+        if (!connections.length) {
+          container.innerHTML = `<div class="empty-state" style="padding:32px">
+            <div class="empty-state-icon">🤝</div>
+            <h3>No connections yet</h3>
+            <p>Browse students to start connecting</p>
+          </div>`;
+          return;
+        }
+        container.innerHTML = connections.map(c => `
+          <div class="flex-between" style="padding:14px 24px; border-bottom:1px solid var(--border);">
+            <div class="flex" style="gap:12px; align-items:center;">
+              <div class="avatar" style="width:36px;height:36px;font-size:0.75rem;">S</div>
+              <div>
+                <div style="font-size:0.875rem;font-weight:600;">Student</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">${Helpers.timeAgo(c.connectedAt || c.createdAt)}</div>
+              </div>
+            </div>
+            <span class="badge badge-green">Connected</span>
+          </div>
+        `).join('');
+      }
+    } catch {
+      container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.875rem;">
+        Could not load data. Check server connection.</div>`;
+    }
+  }
+
+  async function loadPending() {
+    const container = document.getElementById('pendingList');
+    try {
+      const res = await api.getPendingConnections();
+      const pending = res.pending || [];
+      stat1Val = pending.length;
+
+      if (!pending.length) {
+        container.innerHTML = `<p style="font-size:0.875rem;color:var(--text-muted);text-align:center;padding:16px 0;">No pending requests</p>`;
+        return;
+      }
+      container.innerHTML = pending.slice(0, 3).map(p => `
+        <div class="flex-between" style="margin-bottom:10px;">
+          <div class="flex" style="gap:10px;align-items:center;">
+            <div class="avatar" style="width:32px;height:32px;font-size:0.7rem;">${Helpers.initials(p.senderId?.name || 'U')}</div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;">${p.senderId?.name || 'User'}</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);">${Helpers.timeAgo(p.createdAt)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-success btn-sm" onclick="acceptConn('${p._id}', this)">✓</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectConn('${p._id}', this)">✕</button>
+          </div>
+        </div>
+      `).join('');
+    } catch {
+      container.innerHTML = `<p style="font-size:0.875rem;color:var(--text-muted);">Unable to load</p>`;
+    }
+  }
+
+  async function loadRecentJobs() {
+    const container = document.getElementById('recentJobsList');
+    try {
+      const res = await api.getJobs('open', 1, 4);
+      const jobs = res.jobs || [];
+      document.getElementById('stat3').textContent = res.total || 0;
+
+      if (!jobs.length) {
+        container.innerHTML = `<p style="font-size:0.875rem;color:var(--text-muted);text-align:center;padding:16px 0;">No jobs posted yet</p>`;
+        return;
+      }
+      container.innerHTML = jobs.slice(0, 3).map(j => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"
+             onclick="window.location.href='jobs.html'">
+          <div style="width:36px;height:36px;background:var(--bg-input);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;">💼</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${j.title}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">${j.company} • ${j.location}</div>
+          </div>
+          <span class="badge badge-green" style="font-size:0.7rem;">${j.jobType}</span>
+        </div>
+      `).join('');
+    } catch {
+      container.innerHTML = `<p style="font-size:0.875rem;color:var(--text-muted);">Unable to load</p>`;
+    }
+  }
+
+  async function loadUnread() {
+    try {
+      const res = await api.getUnreadCount();
+      document.getElementById('stat4').textContent = res.unreadCount || 0;
+    } catch { document.getElementById('stat4').textContent = 0; }
+  }
+
+  async function loadConnCount() {
+    try {
+      const res = await api.getConnections('accepted', 1, 1);
+      document.getElementById('stat1').textContent = res.total || 0;
+    } catch { document.getElementById('stat1').textContent = 0; }
+  }
+
+  async function acceptConn(id, btn) {
+    try {
+      await api.acceptConnection(id);
+      btn.closest('.flex-between').remove();
+      Toast.success('Connection accepted!');
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  async function rejectConn(id, btn) {
+    try {
+      await api.rejectConnection(id);
+      btn.closest('.flex-between').remove();
+      Toast.info('Connection declined');
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  async function runMatching() {
+    Toast.info('Running AI matching...');
+    try {
+      await api.runMatching(user.id);
+      Toast.success('Matching complete!');
+      loadTopMatches();
+    } catch(e) { Toast.error('Matching service unavailable. Make sure Python service is running.'); }
+  }
+
+  // Init all
+  Promise.all([
+    loadProfile(),
+    loadTopMatches(),
+    loadPending(),
+    loadRecentJobs(),
+    loadUnread(),
+    loadConnCount(),
+  ]);
+</script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile Setup — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .setup-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .setup-card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .setup-header {
+      background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.08));
+      border-bottom: 1px solid var(--border);
+      padding: 32px 40px;
+    }
+    .setup-body { padding: 36px 40px; }
+    .step-indicators {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-light);
+      transition: var(--transition);
+    }
+    .step-dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+    .step-dot.done { background: var(--teal); }
+  </style>
+</head>
+<body>
+<div class="setup-container">
+  <div class="setup-card">
+    <div class="setup-header">
+      <div class="flex-between mb-8">
+        <div class="flex" style="gap:12px;align-items:center;">
+          <div class="logo-icon" style="width:30px;height:30px;">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          </div>
+          <span class="logo-text" style="font-size:1rem;">Career<span>Nexus</span></span>
+        </div>
+        <span class="badge badge-blue" id="stepIndicator">Step 1 of 2</span>
+      </div>
+      <div class="step-indicators" id="stepDots"></div>
+      <h2 id="setupTitle">Complete Your Profile</h2>
+      <p style="color:var(--text-secondary); margin-top:4px;" id="setupSubtitle">Tell us about yourself to get personalized matches</p>
+    </div>
+
+    <div class="setup-body">
+      <!-- STUDENT FORM -->
+      <form id="studentForm" class="hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">University / College</label>
+            <input type="text" id="s_university" class="form-input" placeholder="e.g. IIT Bombay" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Degree</label>
+            <select id="s_degree" class="form-select" required>
+              <option value="">Select degree</option>
+              <option>B.Tech</option><option>B.E.</option><option>BCA</option>
+              <option>MCA</option><option>M.Tech</option><option>MBA</option>
+              <option>B.Sc</option><option>M.Sc</option><option>Ph.D</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Specialization</label>
+            <input type="text" id="s_specialization" class="form-input" placeholder="e.g. Computer Science" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Current Year</label>
+            <select id="s_currentYear" class="form-select">
+              <option value="">Select year</option>
+              <option value="1st">1st Year</option><option value="2nd">2nd Year</option>
+              <option value="3rd">3rd Year</option><option value="4th">4th Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Skills (press Enter to add)</label>
+          <div class="tags-input-container" id="s_skillsContainer">
+            <input type="text" placeholder="e.g. Python, React, Machine Learning..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interests (press Enter to add)</label>
+          <div class="tags-input-container" id="s_interestsContainer">
+            <input type="text" placeholder="e.g. Web Dev, AI, Startups..." />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Preferred Industry</label>
+            <select id="s_preferredIndustry" class="form-select">
+              <option value="">Select industry</option>
+              <option>Technology</option><option>Finance</option><option>Healthcare</option>
+              <option>E-Commerce</option><option>Education</option><option>Consulting</option>
+              <option>Media</option><option>Manufacturing</option><option>Government</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Looking For</label>
+            <select id="s_lookingFor" class="form-select" multiple style="min-height:80px;">
+              <option value="Mentorship">Mentorship</option>
+              <option value="Job Opportunity">Job Opportunity</option>
+              <option value="Guidance">Guidance</option>
+              <option value="Network">Network</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Career Goals</label>
+          <textarea id="s_careerGoals" class="form-textarea" placeholder="Describe your career aspirations..." rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">LinkedIn URL</label>
+            <input type="url" id="s_linkedin" class="form-input" placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">GitHub URL</label>
+            <input type="url" id="s_github" class="form-input" placeholder="https://github.com/..." />
+          </div>
+        </div>
+      </form>
+
+      <!-- ALUMNI FORM -->
+      <form id="alumniForm" class="hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">University / College</label>
+            <input type="text" id="a_university" class="form-input" placeholder="e.g. IIT Bombay" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Degree</label>
+            <select id="a_degree" class="form-select" required>
+              <option value="">Select degree</option>
+              <option>B.Tech</option><option>B.E.</option><option>BCA</option>
+              <option>MCA</option><option>M.Tech</option><option>MBA</option>
+              <option>B.Sc</option><option>M.Sc</option><option>Ph.D</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Graduation Year</label>
+            <input type="number" id="a_graduationYear" class="form-input" placeholder="e.g. 2018" min="1990" max="2024" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Years of Experience</label>
+            <input type="number" id="a_yearsOfExperience" class="form-input" placeholder="e.g. 5" min="0" max="50" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Current Company</label>
+            <input type="text" id="a_company" class="form-input" placeholder="e.g. Google" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation / Title</label>
+            <input type="text" id="a_designation" class="form-input" placeholder="e.g. Senior Software Engineer" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Industry</label>
+            <select id="a_industry" class="form-select" required>
+              <option value="">Select industry</option>
+              <option>Technology</option><option>Finance</option><option>Healthcare</option>
+              <option>E-Commerce</option><option>Education</option><option>Consulting</option>
+              <option>Media</option><option>Manufacturing</option><option>Government</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" id="a_location" class="form-input" placeholder="e.g. Bangalore, India" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Skills (press Enter to add)</label>
+          <div class="tags-input-container" id="a_skillsContainer">
+            <input type="text" placeholder="e.g. React, Node.js, Leadership..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mentoring Areas (press Enter to add)</label>
+          <div class="tags-input-container" id="a_mentoringContainer">
+            <input type="text" placeholder="e.g. Career Guidance, Technical Interview..." />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Availability</label>
+            <select id="a_availability" class="form-select">
+              <option value="Available">Available</option>
+              <option value="Limited">Limited</option>
+              <option value="Not Available">Not Available</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">LinkedIn URL</label>
+            <input type="url" id="a_linkedin" class="form-input" placeholder="https://linkedin.com/in/..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio / About You</label>
+          <textarea id="a_bio" class="form-textarea" placeholder="Tell students about yourself, your journey, and how you can help..." rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="a_canHire" style="width:16px;height:16px;" />
+              Open to Hiring
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="a_canMentor" checked style="width:16px;height:16px;" />
+              Open to Mentoring
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div id="setupError" class="form-error hidden" style="margin-bottom:16px;"></div>
+
+      <div class="flex" style="justify-content:flex-end; gap:12px; margin-top:8px;">
+        <a href="dashboard.html" class="btn btn-ghost">Skip for now</a>
+        <button class="btn btn-primary btn-lg" id="submitBtn" onclick="submitProfile()">
+          Save Profile & Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  const isAlumni = user?.role === 'alumni';
+
+  // Show correct form
+  document.getElementById(isAlumni ? 'alumniForm' : 'studentForm').classList.remove('hidden');
+
+  // Init tags inputs
+  let skillsTag, extraTag;
+  if (isAlumni) {
+    skillsTag = new TagsInput(document.getElementById('a_skillsContainer'));
+    extraTag = new TagsInput(document.getElementById('a_mentoringContainer'));
+  } else {
+    skillsTag = new TagsInput(document.getElementById('s_skillsContainer'));
+    extraTag = new TagsInput(document.getElementById('s_interestsContainer'));
+  }
+
+  // Step dots
+  const dots = document.getElementById('stepDots');
+  ['', '', ''].forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = `step-dot ${i === 0 ? 'active' : ''}`;
+    dots.appendChild(dot);
+  });
+
+  async function submitProfile() {
+    const btn = document.getElementById('submitBtn');
+    const errEl = document.getElementById('setupError');
+    errEl.classList.add('hidden');
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    try {
+      if (isAlumni) {
+        const lookingFor = Array.from(document.getElementById('s_lookingFor')?.selectedOptions || []).map(o => o.value);
+        await api.createAlumniProfile({
+          university: document.getElementById('a_university').value.trim(),
+          degree: document.getElementById('a_degree').value,
+          graduationYear: parseInt(document.getElementById('a_graduationYear').value) || null,
+          yearsOfExperience: parseInt(document.getElementById('a_yearsOfExperience').value) || 0,
+          company: document.getElementById('a_company').value.trim(),
+          designation: document.getElementById('a_designation').value.trim(),
+          industry: document.getElementById('a_industry').value,
+          location: document.getElementById('a_location').value.trim(),
+          skills: skillsTag.getTags(),
+          interests: [],
+          mentoringAreas: extraTag.getTags(),
+          availability: document.getElementById('a_availability').value,
+          linkedinProfile: document.getElementById('a_linkedin').value.trim(),
+          bio: document.getElementById('a_bio').value.trim(),
+          canHire: document.getElementById('a_canHire').checked,
+          canMentor: document.getElementById('a_canMentor').checked,
+          hiringStack: [],
+        });
+      } else {
+        const lookingFor = Array.from(document.getElementById('s_lookingFor').selectedOptions).map(o => o.value);
+        await api.createStudentProfile({
+          university: document.getElementById('s_university').value.trim(),
+          degree: document.getElementById('s_degree').value,
+          specialization: document.getElementById('s_specialization').value.trim(),
+          currentYear: document.getElementById('s_currentYear').value,
+          skills: skillsTag.getTags(),
+          interests: extraTag.getTags(),
+          preferredIndustry: document.getElementById('s_preferredIndustry').value,
+          careerGoals: document.getElementById('s_careerGoals').value.trim(),
+          lookingFor,
+          linkedinProfile: document.getElementById('s_linkedin').value.trim(),
+          githubProfile: document.getElementById('s_github').value.trim(),
+        });
+      }
+
+      Toast.success('Profile saved! Redirecting...');
+      setTimeout(() => window.location.href = 'dashboard.html', 800);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.remove('hidden');
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

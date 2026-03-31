@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">My Profile</h1>
+        <p class="page-subtitle">Manage your professional information</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+        <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">Edit Profile</button>
+      </div>
+    </div>
+
+    <div class="content-area page-enter">
+      <!-- Profile Hero (view mode) -->
+      <div id="profileHero" class="profile-hero">
+        <div class="avatar xl" id="heroAvatar">?</div>
+        <div class="profile-hero-info">
+          <h2 class="profile-hero-name" id="heroName">Loading...</h2>
+          <p class="profile-hero-role" id="heroRole">—</p>
+          <div class="profile-hero-meta" id="heroMeta"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;" id="heroSkills"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="heroActions"></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs" style="max-width:500px; margin-bottom:24px;">
+        <div class="tab-btn active" onclick="switchProfileTab('view', this)">Overview</div>
+        <div class="tab-btn" onclick="switchProfileTab('edit', this)">Edit Profile</div>
+        <div class="tab-btn" onclick="switchProfileTab('activity', this)">Activity</div>
+      </div>
+
+      <!-- VIEW TAB -->
+      <div class="tab-content active" id="tab-view">
+        <div class="grid-2" style="align-items:start; gap:24px;">
+          <div>
+            <div class="card profile-section" id="viewBio" style="display:none;">
+              <div class="profile-section-title">About</div>
+              <p id="viewBioText" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.7;"></p>
+            </div>
+
+            <div class="card profile-section mt-0" style="margin-top:20px;">
+              <div class="profile-section-title">Skills</div>
+              <div id="viewSkills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="card" id="viewStudentExtra" style="margin-top:20px;display:none;">
+              <div class="profile-section-title">Interests</div>
+              <div id="viewInterests" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <div class="card" id="viewAlumniExtra" style="margin-top:20px;display:none;">
+              <div class="profile-section-title">Mentoring Areas</div>
+              <div id="viewMentoring" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="profile-section-title">Profile Details</div>
+              <div id="viewDetails" style="display:flex;flex-direction:column;gap:12px;font-size:0.875rem;"></div>
+            </div>
+
+            <div class="card" id="viewLinks" style="margin-top:20px;display:none;">
+              <div class="profile-section-title">Links</div>
+              <div id="viewLinksContent"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT TAB -->
+      <div class="tab-content" id="tab-edit">
+        <!-- Student edit form -->
+        <div id="studentEditForm" style="display:none;">
+          <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Academic Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">University</label>
+                <input type="text" id="e_s_university" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Degree</label>
+                <select id="e_s_degree" class="form-select">
+                  <option>B.Tech</option><option>B.E.</option><option>BCA</option>
+                  <option>MCA</option><option>M.Tech</option><option>MBA</option>
+                  <option>B.Sc</option><option>M.Sc</option><option>Ph.D</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Specialization</label>
+                <input type="text" id="e_s_specialization" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Current Year</label>
+                <select id="e_s_currentYear" class="form-select">
+                  <option value="1st">1st Year</option><option value="2nd">2nd Year</option>
+                  <option value="3rd">3rd Year</option><option value="4th">4th Year</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Skills & Interests</h3>
+            <div class="form-group">
+              <label class="form-label">Skills</label>
+              <div class="tags-input-container" id="e_s_skillsContainer"><input type="text" placeholder="Add skills..." /></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Interests</label>
+              <div class="tags-input-container" id="e_s_interestsContainer"><input type="text" placeholder="Add interests..." /></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Career Goals</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Preferred Industry</label>
+                <select id="e_s_industry" class="form-select">
+                  <option value="">Select...</option>
+                  <option>Technology</option><option>Finance</option><option>Healthcare</option>
+                  <option>E-Commerce</option><option>Education</option><option>Consulting</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" id="e_s_location" class="form-input" placeholder="City, Country" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Career Goals</label>
+              <textarea id="e_s_goals" class="form-textarea" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">LinkedIn</label>
+                <input type="url" id="e_s_linkedin" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">GitHub</label>
+                <input type="url" id="e_s_github" class="form-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alumni edit form -->
+        <div id="alumniEditForm" style="display:none;">
+          <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Professional Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Company</label>
+                <input type="text" id="e_a_company" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Designation</label>
+                <input type="text" id="e_a_designation" class="form-input" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Industry</label>
+                <select id="e_a_industry" class="form-select">
+                  <option>Technology</option><option>Finance</option><option>Healthcare</option>
+                  <option>E-Commerce</option><option>Education</option><option>Consulting</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" id="e_a_location" class="form-input" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Years of Experience</label>
+                <input type="number" id="e_a_experience" class="form-input" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Availability</label>
+                <select id="e_a_availability" class="form-select">
+                  <option>Available</option><option>Limited</option><option>Not Available</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Academic Background</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">University</label>
+                <input type="text" id="e_a_university" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Degree</label>
+                <select id="e_a_degree" class="form-select">
+                  <option>B.Tech</option><option>B.E.</option><option>BCA</option>
+                  <option>MCA</option><option>M.Tech</option><option>MBA</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="font-size:1rem;margin-bottom:20px;">Skills & Mentoring</h3>
+            <div class="form-group">
+              <label class="form-label">Skills</label>
+              <div class="tags-input-container" id="e_a_skillsContainer"><input type="text" placeholder="Add skills..." /></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mentoring Areas</label>
+              <div class="tags-input-container" id="e_a_mentoringContainer"><input type="text" placeholder="Add mentoring areas..." /></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bio</label>
+              <textarea id="e_a_bio" class="form-textarea" rows="4" placeholder="Tell students about yourself..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">LinkedIn</label>
+              <input type="url" id="e_a_linkedin" class="form-input" />
+            </div>
+            <div style="display:flex;gap:16px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;">
+                <input type="checkbox" id="e_a_canHire" style="width:16px;height:16px;" /> Open to Hiring
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;">
+                <input type="checkbox" id="e_a_canMentor" style="width:16px;height:16px;" /> Open to Mentoring
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div id="editError" class="form-error hidden" style="margin:16px 0;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+          <button class="btn btn-ghost" onclick="switchProfileTab('view', document.querySelector('.tab-btn'))">Cancel</button>
+          <button class="btn btn-primary btn-lg" onclick="saveProfile()" id="saveBtn">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- ACTIVITY TAB -->
+      <div class="tab-content" id="tab-activity">
+        <div class="grid-2" style="gap:20px;">
+          <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:16px;">Connection Stats</h3>
+            <div id="activityStats" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:16px;">Quick Actions</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-secondary w-full" onclick="window.location.href='matches.html'">🎯 View My Matches</button>
+              <button class="btn btn-secondary w-full" onclick="window.location.href='connections.html'">🤝 Manage Connections</button>
+              <button class="btn btn-secondary w-full" onclick="window.location.href='jobs.html'">💼 Browse Jobs</button>
+              <button class="btn btn-secondary w-full" onclick="window.location.href='chat.html'">💬 Open Messages</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('profile');
+  const user = getUser();
+  const isAlumni = user?.role === 'alumni';
+  let profileData = null;
+  let skillsTag, extraTag;
+
+  function switchProfileTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
+
+  async function loadProfile() {
+    try {
+      const res = isAlumni
+        ? await api.getAlumniProfile(user.id)
+        : await api.getStudentProfile(user.id);
+      profileData = res.profile;
+      renderProfile(profileData);
+      populateEditForm(profileData);
+    } catch {
+      document.getElementById('heroName').textContent = user.name;
+      document.getElementById('heroAvatar').textContent = Helpers.initials(user.name);
+      document.getElementById('heroRole').textContent = 'Profile not set up yet';
+      document.getElementById('heroActions').innerHTML = `<a href="profile-setup.html" class="btn btn-primary">Complete Setup</a>`;
+    }
+  }
+
+  function renderProfile(p) {
+    document.getElementById('heroAvatar').textContent = Helpers.initials(p.name || user.name);
+    document.getElementById('heroName').textContent = p.name || user.name;
+
+    if (isAlumni) {
+      document.getElementById('heroRole').textContent = `${p.designation || ''} at ${p.company || '—'}`;
+      document.getElementById('heroMeta').innerHTML = `
+        <span>🏢 ${p.industry || '—'}</span>
+        <span>📍 ${p.location || '—'}</span>
+        <span>🎓 ${p.university || '—'}</span>
+        <span>⏱ ${p.yearsOfExperience || 0}y experience</span>
+      `;
+      document.getElementById('heroActions').innerHTML = `
+        <span class="badge ${p.availability === 'Available' ? 'badge-green' : p.availability === 'Limited' ? 'badge-gold' : 'badge-gray'}">${p.availability || 'Available'}</span>
+        ${p.canMentor ? '<span class="badge badge-blue">Mentors</span>' : ''}
+        ${p.canHire ? '<span class="badge badge-gold">Hires</span>' : ''}
+      `;
+    } else {
+      document.getElementById('heroRole').textContent = `${p.degree || ''} ${p.specialization ? `· ${p.specialization}` : ''} at ${p.university || '—'}`;
+      document.getElementById('heroMeta').innerHTML = `
+        <span>📅 Year ${p.currentYear || '—'}</span>
+        <span>🎯 ${p.preferredIndustry || 'Exploring'}</span>
+        ${p.location ? `<span>📍 ${p.location}</span>` : ''}
+      `;
+    }
+
+    const skills = p.skills || [];
+    document.getElementById('heroSkills').innerHTML = skills.slice(0, 6).map(s => `<span class="skill-badge">${s}</span>`).join('')
+      + (skills.length > 6 ? `<span class="skill-badge">+${skills.length - 6} more</span>` : '');
+
+    // Bio
+    if (p.bio) {
+      document.getElementById('viewBio').style.display = '';
+      document.getElementById('viewBioText').textContent = p.bio;
+    }
+
+    // Skills section
+    document.getElementById('viewSkills').innerHTML = skills.length
+      ? skills.map(s => `<span class="skill-badge">${s}</span>`).join('')
+      : '<span class="text-muted text-sm">No skills added</span>';
+
+    // Extra
+    if (isAlumni) {
+      document.getElementById('viewAlumniExtra').style.display = '';
+      document.getElementById('viewMentoring').innerHTML = (p.mentoringAreas || []).map(s => `<span class="skill-badge match">${s}</span>`).join('') || '<span class="text-muted text-sm">None added</span>';
+    } else {
+      document.getElementById('viewStudentExtra').style.display = '';
+      document.getElementById('viewInterests').innerHTML = (p.interests || []).map(s => `<span class="skill-badge">${s}</span>`).join('') || '<span class="text-muted text-sm">None added</span>';
+    }
+
+    // Details
+    const detailItems = isAlumni
+      ? [
+          ['University', p.university], ['Degree', p.degree],
+          ['Graduation', p.graduationYear], ['Industry', p.industry],
+          ['Company', p.company], ['Availability', p.availability],
+        ]
+      : [
+          ['University', p.university], ['Degree', p.degree],
+          ['Specialization', p.specialization], ['Year', p.currentYear],
+          ['Preferred Industry', p.preferredIndustry], ['Goals', p.careerGoals],
+        ];
+
+    document.getElementById('viewDetails').innerHTML = detailItems
+      .filter(([, v]) => v)
+      .map(([label, val]) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);font-size:0.8rem;">${label}</span>
+          <span style="font-weight:500;">${val}</span>
+        </div>`).join('');
+
+    // Links
+    const links = [];
+    if (p.linkedinProfile) links.push(`<a href="${p.linkedinProfile}" target="_blank" class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start;gap:8px;">🔗 LinkedIn Profile</a>`);
+    if (p.githubProfile) links.push(`<a href="${p.githubProfile}" target="_blank" class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start;gap:8px;">💻 GitHub Profile</a>`);
+    if (links.length) {
+      document.getElementById('viewLinks').style.display = '';
+      document.getElementById('viewLinksContent').innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">${links.join('')}</div>`;
+    }
+
+    // Activity stats
+    document.getElementById('activityStats').innerHTML = `
+      <div class="flex-between"><span style="font-size:0.875rem;color:var(--text-secondary);">Skills listed</span><strong>${skills.length}</strong></div>
+      <div class="flex-between"><span style="font-size:0.875rem;color:var(--text-secondary);">Profile completeness</span><strong>${calcCompleteness(p)}%</strong></div>
+    `;
+  }
+
+  function calcCompleteness(p) {
+    const fields = isAlumni
+      ? ['name','university','degree','company','industry','skills','bio','location','availability']
+      : ['name','university','degree','skills','interests','careerGoals','preferredIndustry'];
+    const filled = fields.filter(f => p[f] && (Array.isArray(p[f]) ? p[f].length : true)).length;
+    return Math.round((filled / fields.length) * 100);
+  }
+
+  function populateEditForm(p) {
+    if (isAlumni) {
+      document.getElementById('alumniEditForm').style.display = '';
+      document.getElementById('e_a_company').value = p.company || '';
+      document.getElementById('e_a_designation').value = p.designation || '';
+      document.getElementById('e_a_university').value = p.university || '';
+      document.getElementById('e_a_degree').value = p.degree || '';
+      document.getElementById('e_a_industry').value = p.industry || '';
+      document.getElementById('e_a_location').value = p.location || '';
+      document.getElementById('e_a_experience').value = p.yearsOfExperience || '';
+      document.getElementById('e_a_availability').value = p.availability || 'Available';
+      document.getElementById('e_a_bio').value = p.bio || '';
+      document.getElementById('e_a_linkedin').value = p.linkedinProfile || '';
+      document.getElementById('e_a_canHire').checked = p.canHire || false;
+      document.getElementById('e_a_canMentor').checked = p.canMentor !== false;
+      skillsTag = new TagsInput(document.getElementById('e_a_skillsContainer'), p.skills || []);
+      extraTag = new TagsInput(document.getElementById('e_a_mentoringContainer'), p.mentoringAreas || []);
+    } else {
+      document.getElementById('studentEditForm').style.display = '';
+      document.getElementById('e_s_university').value = p.university || '';
+      document.getElementById('e_s_degree').value = p.degree || '';
+      document.getElementById('e_s_specialization').value = p.specialization || '';
+      document.getElementById('e_s_currentYear').value = p.currentYear || '';
+      document.getElementById('e_s_industry').value = p.preferredIndustry || '';
+      document.getElementById('e_s_location').value = p.location || '';
+      document.getElementById('e_s_goals').value = p.careerGoals || '';
+      document.getElementById('e_s_linkedin').value = p.linkedinProfile || '';
+      document.getElementById('e_s_github').value = p.githubProfile || '';
+      skillsTag = new TagsInput(document.getElementById('e_s_skillsContainer'), p.skills || []);
+      extraTag = new TagsInput(document.getElementById('e_s_interestsContainer'), p.interests || []);
+    }
+  }
+
+  async function saveProfile() {
+    const btn = document.getElementById('saveBtn');
+    const errEl = document.getElementById('editError');
+    errEl.classList.add('hidden');
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    try {
+      let body;
+      if (isAlumni) {
+        body = {
+          company: document.getElementById('e_a_company').value.trim(),
+          designation: document.getElementById('e_a_designation').value.trim(),
+          university: document.getElementById('e_a_university').value.trim(),
+          degree: document.getElementById('e_a_degree').value,
+          industry: document.getElementById('e_a_industry').value,
+          location: document.getElementById('e_a_location').value.trim(),
+          yearsOfExperience: parseInt(document.getElementById('e_a_experience').value) || 0,
+          availability: document.getElementById('e_a_availability').value,
+          bio: document.getElementById('e_a_bio').value.trim(),
+          linkedinProfile: document.getElementById('e_a_linkedin').value.trim(),
+          canHire: document.getElementById('e_a_canHire').checked,
+          canMentor: document.getElementById('e_a_canMentor').checked,
+          skills: skillsTag.getTags(),
+          mentoringAreas: extraTag.getTags(),
+        };
+        await api.updateAlumniProfile(body);
+      } else {
+        body = {
+          university: document.getElementById('e_s_university').value.trim(),
+          degree: document.getElementById('e_s_degree').value,
+          specialization: document.getElementById('e_s_specialization').value.trim(),
+          currentYear: document.getElementById('e_s_currentYear').value,
+          preferredIndustry: document.getElementById('e_s_industry').value,
+          location: document.getElementById('e_s_location').value.trim(),
+          careerGoals: document.getElementById('e_s_goals').value.trim(),
+          linkedinProfile: document.getElementById('e_s_linkedin').value.trim(),
+          githubProfile: document.getElementById('e_s_github').value.trim(),
+          skills: skillsTag.getTags(),
+          interests: extraTag.getTags(),
+        };
+        await api.updateStudentProfile(body);
+      }
+
+      Toast.success('Profile updated!');
+      // Refresh view
+      const res = isAlumni ? await api.getAlumniProfile(user.id) : await api.getStudentProfile(user.id);
+      profileData = res.profile;
+      renderProfile(profileData);
+      switchProfileTab('view', document.querySelector('.tab-btn'));
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+
+  function toggleEdit() {
+    switchProfileTab('edit', document.querySelectorAll('.tab-btn')[1]);
+  }
+
+  function cancelEdit() {
+    switchProfileTab('view', document.querySelector('.tab-btn'));
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /**
  * Career Nexus Backend Server
- * Main Express server with all routes and middleware
+ * Clean version with correct CORS setup
  */
 
 const express = require('express');
@@ -13,56 +13,60 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketio = require('socket.io');
 
-// Load environment variables
+// Load env
 dotenv.config();
 
-// Initialize Express app
+// Init app
 const app = express();
 const server = http.createServer(app);
+
+// ✅ Normalize CORS origin (REMOVE trailing slash)
+const allowedOrigin = (process.env.CORS_ORIGIN || 'http://127.0.0.1:5501')
+  .replace(/\/$/, '');
+
+console.log("✅ CORS ORIGIN:", allowedOrigin);
+
+// ============ SOCKET.IO ============
 const io = socketio(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: allowedOrigin,
     credentials: true
   }
 });
 
 // ============ MIDDLEWARE ============
 
-// Security headers
+// Security
 app.use(helmet());
 
 // Compression
 app.use(compression());
 
-// CORS
+// ✅ EXPRESS CORS (IMPORTANT FIX)
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true
+  origin: allowedOrigin,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
+
+// Handle preflight explicitly (optional but safe)
+app.options('*', cors());
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 // Logging
-app.use(morgan('combined'));
+app.use(morgan('dev'));
 
-// ============ DATABASE CONNECTION ============
+// ============ DATABASE ============
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(
-      process.env.MONGODB_URI ,
-      {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      }
-    );
-
-    console.log('✓ MongoDB connected successfully',process.env.MONGODB_URI);
-    return conn;
-  } catch (error) {
-    console.error('✗ MongoDB connection failed:', error.message);
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ MongoDB connected');
+  } catch (err) {
+    console.error('❌ MongoDB error:', err.message);
     process.exit(1);
   }
 };
@@ -71,196 +75,82 @@ connectDB();
 
 // ============ ROUTES ============
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    pythonService: process.env.PYTHON_SERVICE_URL || 'http://localhost:8000'
+    message: 'Server running',
+    time: new Date()
   });
 });
 
-// Mount Auth routes
-try {
-  app.use('/api/auth', require('./routes/auth'));
-  console.log('✓ Auth routes mounted');
-} catch (error) {
-  console.error('✗ Error loading auth routes:', error.message);
-}
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/match', require('./routes/match'));
+app.use('/api/connect', require('./routes/connection'));
+app.use('/api/chat', require('./routes/chat'));
+app.use('/api/message', require('./routes/message'));
+app.use('/api/job', require('./routes/job'));
 
-// Mount Profile routes
-try {
-  app.use('/api/profile', require('./routes/profile'));
-  console.log('✓ Profile routes mounted');
-} catch (error) {
-  console.error('✗ Error loading profile routes:', error.message);
-}
-
-// Mount Match routes
-try {
-  app.use('/api/match', require('./routes/match'));
-  console.log('✓ Match routes mounted');
-} catch (error) {
-  console.error('✗ Error loading match routes:', error.message);
-}
-
-// Mount Connection routes
-try {
-  app.use('/api/connect', require('./routes/connection'));
-  console.log('✓ Connection routes mounted');
-} catch (error) {
-  console.error('✗ Error loading connection routes:', error.message);
-}
-
-// Mount Chat routes
-try {
-  app.use('/api/chat', require('./routes/chat'));
-  console.log('✓ Chat routes mounted');
-} catch (error) {
-  console.error('✗ Error loading chat routes:', error.message);
-}
-
-// Mount Message routes
-try {
-  app.use('/api/message', require('./routes/message'));
-  console.log('✓ Message routes mounted');
-} catch (error) {
-  console.error('✗ Error loading message routes:', error.message);
-}
-
-// Mount Job routes
-try {
-  app.use('/api/job', require('./routes/job'));
-  console.log('✓ Job routes mounted');
-} catch (error) {
-  console.error('✗ Error loading job routes:', error.message);
-}
-
-// ============ SOCKET.IO REAL-TIME CHAT ============
+// ============ SOCKET LOGIC ============
 
 const activeSockets = new Map();
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log('🔌 Connected:', socket.id);
 
-  // User connects
   socket.on('user_connect', (userId) => {
     activeSockets.set(userId, socket.id);
-    console.log(`User ${userId} connected with socket ${socket.id}`);
-    io.emit('user_online', { userId, socketId: socket.id });
+    io.emit('user_online', { userId });
   });
 
-  // Send message
   socket.on('send_message', (data) => {
-    const { receiverId, message, senderId, senderName } = data;
-    const receiverSocket = activeSockets.get(receiverId);
-    
+    const receiverSocket = activeSockets.get(data.receiverId);
+
     if (receiverSocket) {
       io.to(receiverSocket).emit('receive_message', {
-        senderId,
-        senderName,
-        message,
+        ...data,
         timestamp: new Date()
       });
     }
   });
 
-  // Typing indicator
-  socket.on('typing', (data) => {
-    const { receiverId, isTyping, senderName } = data;
-    const receiverSocket = activeSockets.get(receiverId);
-    
-    if (receiverSocket) {
-      io.to(receiverSocket).emit('user_typing', {
-        senderName,
-        isTyping
-      });
-    }
-  });
-
-  // Connection request notification
-  socket.on('connection_request', (data) => {
-    const { receiverId, senderId, senderName } = data;
-    const receiverSocket = activeSockets.get(receiverId);
-    
-    if (receiverSocket) {
-      io.to(receiverSocket).emit('connection_request_received', {
-        senderId,
-        senderName,
-        message: `${senderName} sent you a connection request`
-      });
-    }
-  });
-
-  // Match notification
-  socket.on('new_match', (data) => {
-    const { receiverId, matchInfo } = data;
-    const receiverSocket = activeSockets.get(receiverId);
-    
-    if (receiverSocket) {
-      io.to(receiverSocket).emit('match_notification', matchInfo);
-    }
-  });
-
-  // Disconnect
   socket.on('disconnect', () => {
     for (let [userId, socketId] of activeSockets.entries()) {
       if (socketId === socket.id) {
         activeSockets.delete(userId);
-        console.log(`User ${userId} disconnected`);
         io.emit('user_offline', { userId });
         break;
       }
     }
   });
-
-  // Error handling
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
-  });
 });
 
 // ============ ERROR HANDLING ============
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found',
-    path: req.path
+    message: 'Route not found'
   });
 });
 
-// Global error handler
+// Global error
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
+  console.error(err);
+  res.status(500).json({
     success: false,
-    message: err.message || 'Server error',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    message: err.message
   });
 });
 
 // ============ START SERVER ============
 
 const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
 server.listen(PORT, () => {
-  console.log(`
-  ╔════════════════════════════════════════╗
-  ║   Career Nexus Backend Server          ║
-  ║   Version: 1.0.0                       ║
-  ║   Environment: ${NODE_ENV}                  ║
-  ║   Port: ${PORT}                          ║
-  ║   Python Service: ${process.env.PYTHON_SERVICE_URL || 'http://localhost:8000'} ║
-  ╚════════════════════════════════════════╝
-  `);
-  console.log('✓ Express server is running on port', PORT);
-  console.log('✓ Server is running and ready to accept connections');
-  console.log('✓ All routes are mounted and ready');
-  console.log('✓ Socket.IO is running for real-time features');
+  console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
 });
 
 module.exports = { app, io, server };

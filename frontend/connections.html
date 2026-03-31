@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connections — CareerNexus</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-wrapper">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Connections</h1>
+        <p class="page-subtitle">Manage your professional network</p>
+      </div>
+    </div>
+
+    <div class="content-area page-enter">
+      <!-- TABS -->
+      <div class="tabs" style="max-width:400px;">
+        <div class="tab-btn active" onclick="switchTab('pending', this)">
+          Pending <span class="nav-badge" id="pendingCount" style="display:inline;margin-left:4px;background:var(--rose)">0</span>
+        </div>
+        <div class="tab-btn" onclick="switchTab('accepted', this)">Connected</div>
+        <div class="tab-btn" onclick="switchTab('all', this)">All Requests</div>
+      </div>
+
+      <div id="connectionsContent">
+        <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:80px;margin-bottom:12px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:80px;border-radius:12px;"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+  Nav.init('connections');
+  const user = getUser();
+  let currentTab = 'pending';
+
+  async function loadConnections(status) {
+    const container = document.getElementById('connectionsContent');
+
+    try {
+      let items = [];
+      if (status === 'pending') {
+        const res = await api.getPendingConnections();
+        items = res.pending || [];
+        document.getElementById('pendingCount').textContent = items.length;
+        if (!items.length) {
+          container.innerHTML = `<div class="empty-state">
+            <div class="empty-state-icon">🤝</div>
+            <h3>No pending requests</h3>
+            <p>When someone sends you a connection request, it will appear here</p>
+          </div>`;
+          return;
+        }
+        container.innerHTML = items.map(c => `
+          <div class="card flex-between" style="margin-bottom:12px;padding:18px 24px;">
+            <div class="flex" style="gap:14px;align-items:center;">
+              <div class="avatar">${Helpers.initials(c.senderId?.name || 'U')}</div>
+              <div>
+                <div style="font-weight:600;">${c.senderId?.name || 'User'}</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);">Sent ${Helpers.timeAgo(c.createdAt)}</div>
+                ${c.message ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-top:4px;font-style:italic;">"${c.message}"</div>` : ''}
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-success btn-sm" onclick="accept('${c._id}', this)">✓ Accept</button>
+              <button class="btn btn-danger btn-sm" onclick="reject('${c._id}', this)">✕ Reject</button>
+            </div>
+          </div>`).join('');
+      } else {
+        const res = await api.getConnections(status === 'all' ? '' : status, 1, 50);
+        items = res.connections || [];
+        if (!items.length) {
+          container.innerHTML = `<div class="empty-state">
+            <div class="empty-state-icon">🌐</div>
+            <h3>No ${status === 'accepted' ? 'connections' : 'requests'} yet</h3>
+            <p>${status === 'accepted' ? 'Accept pending requests or connect with people from Matches' : 'No connection activity yet'}</p>
+          </div>`;
+          return;
+        }
+        container.innerHTML = items.map(c => {
+          const other = c.senderId === user.id ? c.receiverId : c.senderId;
+          const statusBadges = { pending: 'badge-gold', accepted: 'badge-green', rejected: 'badge-red' };
+          return `<div class="card flex-between" style="margin-bottom:12px;padding:18px 24px;">
+            <div class="flex" style="gap:14px;align-items:center;">
+              <div class="avatar">U</div>
+              <div>
+                <div style="font-weight:600;">Connection</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);">${Helpers.timeAgo(c.createdAt)}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="badge ${statusBadges[c.status] || 'badge-gray'}">${c.status}</span>
+              ${c.status === 'accepted' ? `<button class="btn btn-secondary btn-sm" onclick="startChat('${other}')">Message</button>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+      }
+    } catch(e) {
+      container.innerHTML = `<div class="empty-state"><h3>Could not load connections</h3><p>${e.message}</p></div>`;
+    }
+  }
+
+  function switchTab(tab, btn) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadConnections(tab);
+  }
+
+  async function accept(id, btn) {
+    const card = btn.closest('.card');
+    try {
+      await api.acceptConnection(id);
+      card.style.borderColor = 'var(--teal)';
+      card.querySelector('.flex-between div:last-child').innerHTML = `<span class="badge badge-green">✓ Connected</span>`;
+      Toast.success('Connection accepted!');
+      Nav.loadBadges();
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  async function reject(id, btn) {
+    const card = btn.closest('.card');
+    try {
+      await api.rejectConnection(id);
+      card.style.opacity = '0.5';
+      card.querySelector('.flex-between div:last-child').innerHTML = `<span class="badge badge-gray">Declined</span>`;
+      Toast.info('Connection declined');
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  async function startChat(receiverId) {
+    try {
+      const res = await api.startChat(receiverId);
+      window.location.href = `chat.html?chatId=${res.chat._id}`;
+    } catch(e) { Toast.error(e.message); }
+  }
+
+  loadConnections('pending');
+</script>
+</body>
+</html>
